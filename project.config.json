@@ -11,7 +11,10 @@
 	},
 	"appid": "wx7ccc1b6d76552ff5",
 	"projectname": "llst",
-	"libVersion": "2.2.5",
+	"libVersion": "2.7.0",
+	"simulatorType": "wechat",
+	"simulatorPluginLibVersion": {},
+	"cloudfunctionTemplateRoot": "cloudfunctionTemplate",
 	"condition": {
 		"search": {
 			"current": -1,
