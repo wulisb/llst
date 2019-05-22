@@ -102,25 +102,31 @@ Page({
 
   //搜索动态
   searchMoment(e) {
+    this.setData({
+      'wxSearchData.view.isShowSearchHistory': false
+    })
     WxSearch.wxSearchAddHisKey(this)
     wx.cloud.callFunction({
       name: 'dbOpr',
       data: {
         opr: 'get',
         tableName: 'moment',
-        
-        datas: {
+        command: 'or',
+        datas: [{
           momentTitle: db.RegExp({
-              regexp: e.detail.value,
-              options: 'i'
-            })
-          }
-          
+            regexp: e.detail.value,
+            options: 'i'
+          })
+        }, {
+          momentTxt: db.RegExp({
+            regexp: e.detail.value,
+            options: 'i'
+          })
+        }]
       },
       success: res => {
         console.log(res)
         this.setData({
-          'wxSearchData.view.isShowSearchHistory':false,
           searchMomentResult: res.result.data
         })
       }
@@ -156,24 +162,23 @@ Page({
     console.log(e)
     wx.cloud.callFunction({
       name: 'dbOpr',
+      command: 'inc',
       data: {
         opr: 'update',
         tableName: 'moment',
-        datas: {
-          where: {
-            docId: e.tatget.dataset._id
-          },
-          update: {
-            likeNum: _.inc(1)
-          }
+        command: 'inc',
+        where: {
+          _id: e.target.dataset.key._id
+        },
+        update: {
+          likeNum: 2
         }
       },
       success: res => {
-        this.setData({
-          clubLogo: _fileID
-        })
+        console.log(res)
         wx.showToast({
-          title: '上传成功'
+          icon: 'none',
+          title: '谢谢点赞'
         })
       }
     })
@@ -247,13 +252,11 @@ Page({
               data: {
                 opr: 'update',
                 tableName: 'clubInfo',
+                where: {
+                  _id: app.globalData.clubDoc
+                },
                 datas: {
-                  where: {
-                    docId: app.globalData.clubDoc
-                  },
-                  update: {
-                    clubLogo: _fileID
-                  }
+                  clubLogo: _fileID
                 }
               },
               success: res => {
@@ -367,14 +370,12 @@ Page({
       data: {
         opr: 'update',
         tableName: 'userInfo',
+        where: {
+          _id: app.globalData.userDoc
+        },
         datas: {
-          where: {
-            docId: app.globalData.userDoc
-          },
-          update: {
-            userName: params.name,
-            userTel: params.tel
-          }
+          userName: params.name,
+          userTel: params.tel
         }
       },
       success: res => {
