@@ -8,7 +8,7 @@
 <!-- 用户信息 -->
 <view class="margin-xl padding-xl bg-white radius shadow-lg">
   <view class="flex justify-center">
-    <button wx:if="{{!logged && canIUse}}" open-type="getUserInfo" bindgetuserinfo="bindgetuserinfo" class='cu-btn round bg-yellow shadow'>登录</button>
+    <button wx:if="{{!logged && canIUse}}" open-type="getUserInfo" bindgetuserinfo="bindGetUserinfo" class='cu-btn round bg-yellow shadow'>登录</button>
     <block wx:else>
       <view class='text-center'>
         <view class="cu-avatar xl round solids" style="background-image:url({{avatarUrl}})"></view>
@@ -41,19 +41,35 @@
 
 <!-- 添加成员 -->
 <view class="margin-xl padding-xl bg-white radius shadow-lg">
-  <view class='weui-form-preview__btn' bindtap="addMember">添加成员</view>
   <view class="weui-search-bar">
     <view class="weui-search-bar__form">
       <view class="weui-search-bar__box">
-        <icon class="weui-icon-search_in-box" type="search" size="14" bindtap="wxSearchFn"></icon>
-        <input type="text" class="weui-search-bar__input" placeholder="搜索成员" value="{{wxSearchData.value}}" bindfocus="wxSearchFocus" bindinput="wxSearchInput" bindblur="wxSearchBlur" bindconfirm='wxSearchFn' />
-        <view class="weui-icon-clear" wx:if="{{inputVal.length > 0}}" bindtap="clearInput">
-          <icon type="clear" size="14"></icon>
+        <icon class="weui-icon-search_in-box" type="search" size="14"></icon>
+        <input class="weui-search-bar__input" placeholder="搜索用户" value="{{wxSearchData.value}}" bindfocus="wxSearchFocus" bindinput="wxSearchInput" bindblur="wxSearchBlur" bindconfirm='searchUser' />
+        <view class="weui-icon-clear" wx:if="{{wxSearchData.value.length > 0}}" bindtap="wxSearchclearInput">
+          <icon class='padding-bottom-sm' type="clear" size="14"></icon>
         </view>
       </view>
     </view>
   </view>
-  <template is="wxSearch" data="{{wxSearchData}}" />
+  <view class="wxSearch" bindtap="wxSearchTap" style="display:{{wxSearchData.view.isShow ? 'block':'none'}};top:{{wxSearchData.view.barHeight}}px;">
+    <view class="wxSearchInner">
+      <view class="wxSearchResult" style="display:block;">
+        <text class="wxSearchTitle">搜索结果</text>
+        <view wx:if="{{searchUserResult[0]}}" class="wxSearchResultList">
+          <block wx:for="{{searchUserResult}}">
+            <view class="wxSearchResultItem">
+              <text class="wxSearchResultItemText">{{item.userNickName}}({{item.userName}})</text>
+              <text class="wxSearchResultItemAdd" bindtap="addMember" data-key='{{item}}'>添加</text>
+            </view>
+          </block>
+        </view>
+        <view wx:else>
+          <view class="wxSearchResultEmpty">无</view>
+        </view>
+      </view>
+    </view>
+  </view>
 </view>
 
 <!-- 发表动态 -->
@@ -82,15 +98,59 @@
   <view class="weui-search-bar">
     <view class="weui-search-bar__form">
       <view class="weui-search-bar__box">
-        <icon class="weui-icon-search_in-box" type="search" size="14" bindtap="wxSearchFn"></icon>
-        <input type="text" class="weui-search-bar__input" placeholder="搜索动态" value="{{wxSearchData.value}}" bindfocus="wxSearchFocus" bindinput="wxSearchInput" bindblur="wxSearchBlur" bindconfirm='wxSearchFn' />
-        <view class="weui-icon-clear" wx:if="{{inputVal.length > 0}}" bindtap="clearInput">
-          <icon type="clear" size="14"></icon>
+        <icon class="weui-icon-search_in-box" type="search" size="14"></icon>
+        <input class="weui-search-bar__input" placeholder="搜索动态" value="{{wxSearchData.value}}" bindfocus="wxSearchFocus" bindinput="wxSearchInput" bindblur="wxSearchBlur" bindconfirm='searchMoment' />
+        <view class="weui-icon-clear" wx:if="{{wxSearchData.value.length > 0}}" bindtap="wxSearchclearInput">
+          <icon class='padding-bottom-sm' type="clear" size="14"></icon>
         </view>
       </view>
     </view>
   </view>
-  <template is="wxSearch" data="{{wxSearchData}}" />
+  <view class="wxSearch" bindtap="wxSearchTap" style="display:{{wxSearchData.view.isShow ? 'block':'none'}};top:{{wxSearchData.view.barHeight}}px;">
+    <view class="wxSearchInner">
+      <view class="wxSearchMindKey">
+        <view class="wxSearchMindKeyList">
+          <block wx:for="{{wxSearchData.mindKeys}}">
+            <view class="wxSearchMindKeyItem" bindtap="wxSearchKeyTap" data-key="{{item}}">{{item}}</view>
+          </block>
+        </view>
+      </view>
+      <view class="wxSearchHistory" style="display:{{wxSearchData.view.isShowSearchHistory ? 'block':'none'}}">
+        <text class="wxSearchTitle">搜索历史</text>
+        <view wx:if="{{wxSearchData.his[0]}}" class="wxSearchHistoryList">
+          <block wx:for="{{wxSearchData.his}}">
+            <view class="wxSearchHistoryItem">
+              <text class="wxSearchHistoryItemText" bindtap="wxSearchKeyTap" data-key="{{item}}">{{item}}</text>
+              <text class="wxSearchHistoryItemDel" bindtap="wxSearchDeleteKey" data-key="{{item}}">删除</text>
+            </view>
+          </block>
+          <view class="wxSearchDeleteAllBtn" bindtap="wxSearchDeleteAll">清除历史</view>
+        </view>
+        <view wx:else>
+          <view class="wxSearchHistoryEmpty">无</view>
+        </view>
+      </view>
+      <view class="wxSearchResult" style="display:block;">
+        <text class="wxSearchTitle">搜索结果</text>
+        <view wx:if="{{searchMomentResult[0]}}" class="wxSearchResultList">
+          <block wx:for="{{searchMomentResult}}">
+            <view class="wxSearchResultItem">
+              <view>
+                <text class="wxSearchResultItemText">{{item.momentTitle}}:</text>
+              </view>
+              <view>
+                <text class="wxSearchResultItemText">{{item.momentTxt}}</text>
+                <text class="wxSearchResultItemlike" bindtap="likeMoment" data-key='{{item}}'>点赞</text>
+              </view>
+            </view>
+          </block>
+        </view>
+        <view wx:else>
+          <view class="wxSearchResultEmpty">无</view>
+        </view>
+      </view>
+    </view>
+  </view>
 </view>
 
 <!-- 编辑个人信息 -->

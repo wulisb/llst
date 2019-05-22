@@ -29,7 +29,7 @@ page {
   background-color: #fff;
 }
 
-.userinfo-nick{
+.userinfo-nick {
   width: 100rpx;
   height: 50rpx;
   text-align: center;
@@ -49,7 +49,7 @@ page {
   line-height: 34px;
   font-size: 34rpx;
   text-align: center;
-  background:  #fff;
+  background: #fff;
 }
 
 .uploader-container {
