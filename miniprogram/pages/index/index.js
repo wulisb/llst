@@ -294,7 +294,17 @@ Page({
 
   //创建社团
   addClub(e) {
-    //插入数据库
+    const params = e.detail.value
+    //验证不通过，提示错误信息
+    if (!this.WxValidate3.checkForm(params)) {
+      const err = this.WxValidate3.errorList[0]
+      wx.showModal({
+        content: err.msg,
+        showCancel: false
+      })
+      return false
+    }
+    //验证通过，插入数据库
     let _clubId = parseInt(Math.random() * 1000000)
     wx.cloud.callFunction({
       name: 'dbOpr',
@@ -348,7 +358,7 @@ Page({
   //配置表单验证函数
   initValidate() {
     // 验证字段的规则
-    const rules1 = {
+    const userRules = {
       name: {
         required: true,
         minlength: 2
@@ -358,7 +368,7 @@ Page({
         tel: true
       }
     }
-    const rules2 = {
+    const momentRules = {
       momentTitle: {
         required: true
       },
@@ -366,18 +376,23 @@ Page({
         required: true
       }
     }
+    const clubRules = {
+      clubName: {
+        required: true
+      }
+    }
     // 验证字段的提示信息，若不传则调用默认的信息
-    const messages1 = {
+    const userMessages = {
       name: {
         required: '请填写姓名',
-        minlength: '请输入正确的名称'
+        minlength: '请输入正确的姓名'
       },
       tel: {
         required: '请填写手机号',
         tel: '请填写正确的手机号'
       }
     }
-    const messages2 = {
+    const momentMessages = {
       momentTitle: {
         required: '请输入标题'
       },
@@ -385,8 +400,14 @@ Page({
         required: '请输入内容'
       }
     }
-    this.WxValidate1 = new WxValidate(rules1, messages1)
-    this.WxValidate2 = new WxValidate(rules2, messages2)
+    const clubMessages = {
+      clubName: {
+        required: '请输入名称'
+      }
+    }
+    this.WxValidate1 = new WxValidate(userRules, userMessages)
+    this.WxValidate2 = new WxValidate(momentRules, momentMessages)
+    this.WxValidate3 = new WxValidate(clubRules, clubMessages)
   },
 
   //编辑个人信息
