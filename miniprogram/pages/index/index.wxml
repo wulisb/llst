@@ -13,7 +13,6 @@
       <view class='text-center'>
         <view class="cu-avatar xl round solids" style="background-image:url({{avatarUrl}})"></view>
         <view class="padding">{{nickName}}</view>
-        <view class="padding">您的openId为{{userOpenId}}</view>
       </view>
     </block>
   </view>
@@ -111,7 +110,7 @@
       <view class="wxSearchMindKey">
         <view class="wxSearchMindKeyList">
           <block wx:for="{{wxSearchData.mindKeys}}">
-            <view class="wxSearchMindKeyItem" bindtap="wxSearchKeyTap" data-key="{{item}}">{{item}}</view>
+            <view class="wxSearchMindKeyItem" catchtap="wxSearchKeyTap" data-key="{{item}}">{{item}}</view>
           </block>
         </view>
       </view>
@@ -120,7 +119,7 @@
         <view wx:if="{{wxSearchData.his[0]}}" class="wxSearchHistoryList">
           <block wx:for="{{wxSearchData.his}}">
             <view class="wxSearchHistoryItem">
-              <text class="wxSearchHistoryItemText" bindtap="wxSearchKeyTap" data-key="{{item}}">{{item}}</text>
+              <text class="wxSearchHistoryItemText" catchtap="wxSearchKeyTap" data-key="{{item}}">{{item}}</text>
               <text class="wxSearchHistoryItemDel" bindtap="wxSearchDeleteKey" data-key="{{item}}">删除</text>
             </view>
           </block>
@@ -154,7 +153,7 @@
 </view>
 
 <!-- 编辑个人信息 -->
-<view class="margin-xl padding-xl bg-white radius shadow-lg">
+<view class="margin-xl padding-xl bg-white radius shadow-lg" wx:if="{{logged}}">
   <form bindsubmit="setUserInfo">
     <view class="weui-cells__title">请填写个人信息</view>
     <view class="weui-cells weui-cells_after-title">

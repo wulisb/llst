@@ -7,24 +7,11 @@ const _ = db.command
 
 Page({
   data: {
-    //社团信息
-    clubDoc: '',
-    clubId: '',
-    clubName: '',
-    clubLogo: '',
-    //图片信息
     imgFileId: '',
-    //用户信息
-    userDoc: '',
-    userOpenId: '',
-    userName: '',
-    userTel: '',
-    nickName: '',
     avatarUrl: '../../images/user-unlogin.png',
     logged: false,
     //判断小程序的API，回调，参数，组件等是否在当前版本可用
-    canIUse: wx.canIUse('button.open-type.getUserInfo'),
-    //搜索记录
+    canIUse: wx.canIUse('button.open-type.getUserInfo')
   },
 
   //调用云函数获取openId
@@ -35,7 +22,6 @@ Page({
         this.setData({
           userOpenId: res.result.OPENID
         })
-        app.globalData.userOpenId = res.result.OPENID
       }
     })
   },
@@ -77,6 +63,17 @@ Page({
 
   //发表动态
   sendMoment(e) {
+    const params = e.detail.value
+    //验证不通过，提示错误信息
+    if (!this.WxValidate2.checkForm(params)) {
+      const err = this.WxValidate2.errorList[0]
+      wx.showModal({
+        content: err.msg,
+        showCancel: false
+      })
+      return false
+    }
+    //验证通过，更新数据库
     wx.cloud.callFunction({
       name: 'dbOpr',
       data: {
@@ -85,9 +82,9 @@ Page({
         datas: {
           momentTitle: e.detail.value.momentTitle,
           momentTxt: e.detail.value.momentTxt,
-          authorId: app.globalData.userOpenId,
+          authorId: this.data.userOpenId,
           source: 'user',
-          momentImg: this.imgFileId,
+          momentImg: this.data.imgFileId,
           likeNum: 0,
           createTime: db.serverDate()
         }
@@ -103,7 +100,7 @@ Page({
   //搜索动态
   searchMoment(e) {
     this.setData({
-      'wxSearchData.view.isShowSearchHistory': false
+      'wxSearchData.view.isShowSearchHistory': false,
     })
     WxSearch.wxSearchAddHisKey(this)
     wx.cloud.callFunction({
@@ -114,12 +111,12 @@ Page({
         command: 'or',
         datas: [{
           momentTitle: db.RegExp({
-            regexp: e.detail.value,
+            regexp: e.detail.value || e.target.dataset.key,
             options: 'i'
           })
         }, {
           momentTxt: db.RegExp({
-            regexp: e.detail.value,
+            regexp: e.detail.value || e.target.dataset.key,
             options: 'i'
           })
         }]
@@ -146,6 +143,7 @@ Page({
   },
   wxSearchKeyTap(e) {
     WxSearch.wxSearchKeyTap(e, this)
+    this.searchMoment(e)
   },
   wxSearchDeleteKey(e) {
     WxSearch.wxSearchDeleteKey(e, this)
@@ -162,7 +160,6 @@ Page({
     console.log(e)
     wx.cloud.callFunction({
       name: 'dbOpr',
-      command: 'inc',
       data: {
         opr: 'update',
         tableName: 'moment',
@@ -170,9 +167,7 @@ Page({
         where: {
           _id: e.target.dataset.key._id
         },
-        update: {
-          likeNum: 2
-        }
+        update: likeNum
       },
       success: res => {
         console.log(res)
@@ -214,7 +209,11 @@ Page({
       data: {
         opr: 'add',
         tableName: 'clubMember',
-        datas: e.tatget.dataset
+        datas: {
+          memberId: e.target.dataset.key,
+          clubId:this.data.clubId,
+          position:'ordinary'
+        }
       },
       success: res => {
         console.log(res)
@@ -227,66 +226,70 @@ Page({
 
   // 上传logo
   uploadLogo() {
-    wx.chooseImage({
-      count: 1,
-      sizeType: ['original', 'compressed'],
-      sourceType: ['album', 'camera'],
-      success: res => {
-        wx.showLoading({
-          title: '上传中',
-        })
-        const filePath = res.tempFilePaths[0] //临时路径
-        const logoName = 'clubLogo' + this.data.clubId;
-        const cloudPath = logoName + filePath.match(/\.[^.]+?$/)[0] //云存储图片名字
-        wx.cloud.uploadFile({
-          cloudPath,
-          filePath,
-          success: res => {
-            this.setData({
-              imgFileId: res.fileID
-            })
-            //更新数据库
-            let _fileID = res.fileID
-            wx.cloud.callFunction({
-              name: 'dbOpr',
-              data: {
-                opr: 'update',
-                tableName: 'clubInfo',
-                where: {
-                  _id: app.globalData.clubDoc
+    if (this.data.clubId) {
+      wx.chooseImage({
+        count: 1,
+        sizeType: ['original', 'compressed'],
+        sourceType: ['album', 'camera'],
+        success: res => {
+          wx.showLoading({
+            title: '上传中',
+          })
+          const filePath = res.tempFilePaths[0] //临时路径
+          const logoName = 'clubLogo' + this.data.clubId;
+          const cloudPath = logoName + filePath.match(/\.[^.]+?$/)[0] //云存储图片名字
+          wx.cloud.uploadFile({
+            cloudPath,
+            filePath,
+            success: res => {
+              //更新数据库
+              let _fileID = res.fileID
+              wx.cloud.callFunction({
+                name: 'dbOpr',
+                data: {
+                  opr: 'update',
+                  tableName: 'clubInfo',
+                  where: {
+                    clubId: this.data.clubId
+                  },
+                  update: {
+                    clubLogo: _fileID
+                  }
                 },
-                datas: {
-                  clubLogo: _fileID
+                success: res => {
+                  this.setData({
+                    clubLogo: _fileID
+                  })
+                  wx.showToast({
+                    title: '上传成功'
+                  })
+                },
+                fail: () => {
+                  wx.showToast({
+                    icon: 'none',
+                    title: '上传失败'
+                  })
                 }
-              },
-              success: res => {
-                this.setData({
-                  clubLogo: _fileID
-                })
-                wx.showToast({
-                  title: '上传成功'
-                })
-              },
-              fail: () => {
-                wx.showToast({
-                  icon: 'none',
-                  title: '上传失败'
-                })
-              }
-            })
-          },
-          fail: () => {
-            wx.showToast({
-              icon: 'none',
-              title: '请重新选择'
-            })
-          },
-          complete: () => {
-            wx.hideLoading()
-          }
-        })
-      },
-    })
+              })
+            },
+            fail: () => {
+              wx.showToast({
+                icon: 'none',
+                title: '请重新选择'
+              })
+            },
+            complete: () => {
+              wx.hideLoading()
+            }
+          })
+        },
+      })
+    } else {
+      wx.showToast({
+        icon: 'none',
+        title: '请先创建社团'
+      })
+    }
   },
 
   //创建社团
@@ -311,9 +314,26 @@ Page({
           clubId: _clubId,
           clubName: e.detail.value.clubName
         })
-        app.globalData.clubDoc = res.result._id
         wx.showToast({
           title: '创建社团成功'
+        })
+        wx.cloud.callFunction({
+          name: 'dbOpr',
+          data: {
+            opr: 'add',
+            tableName: 'clubMember',
+            datas: {
+              memberId: this.data.userOpenId,
+              clubId: _clubId,
+              position: 'chief'
+            }
+          },
+          success: res => {
+            console.log(res)
+            wx.showToast({
+              title: '社长你好'
+            })
+          }
         })
       },
       fail: err => {
@@ -328,7 +348,7 @@ Page({
   //配置表单验证函数
   initValidate() {
     // 验证字段的规则
-    const rules = {
+    const rules1 = {
       name: {
         required: true,
         minlength: 2
@@ -338,8 +358,16 @@ Page({
         tel: true
       }
     }
+    const rules2 = {
+      momentTitle: {
+        required: true
+      },
+      momentTxt: {
+        required: true
+      }
+    }
     // 验证字段的提示信息，若不传则调用默认的信息
-    const messages = {
+    const messages1 = {
       name: {
         required: '请填写姓名',
         minlength: '请输入正确的名称'
@@ -349,15 +377,24 @@ Page({
         tel: '请填写正确的手机号'
       }
     }
-    this.WxValidate = new WxValidate(rules, messages)
+    const messages2 = {
+      momentTitle: {
+        required: '请输入标题'
+      },
+      momentTxt: {
+        required: '请输入内容'
+      }
+    }
+    this.WxValidate1 = new WxValidate(rules1, messages1)
+    this.WxValidate2 = new WxValidate(rules2, messages2)
   },
 
   //编辑个人信息
   setUserInfo(e) {
     const params = e.detail.value
     //验证不通过，提示错误信息
-    if (!this.WxValidate.checkForm(params)) {
-      const err = this.WxValidate.errorList[0]
+    if (!this.WxValidate1.checkForm(params)) {
+      const err = this.WxValidate1.errorList[0]
       wx.showModal({
         content: err.msg,
         showCancel: false
@@ -371,14 +408,15 @@ Page({
         opr: 'update',
         tableName: 'userInfo',
         where: {
-          _id: app.globalData.userDoc
+          userOpenId: this.data.userOpenId
         },
-        datas: {
+        update: {
           userName: params.name,
           userTel: params.tel
         }
       },
       success: res => {
+        console.log(res)
         this.setData({
           userName: params.name,
           userTel: params.tel
@@ -403,8 +441,6 @@ Page({
         if (res.authSetting['scope.userInfo']) {
           wx.getUserInfo({
             success: res => {
-              app.globalData.nickName = res.userInfo.nickName
-              app.globalData.avatarUrl = res.userInfo.avatarUrl
               this.setData({
                 nickName: res.userInfo.nickName,
                 avatarUrl: res.userInfo.avatarUrl
@@ -419,7 +455,6 @@ Page({
   //用户已授权登录，显示用户信息
   bindGetUserinfo(e) {
     if (e.detail.userInfo) {
-      app.globalData.logged = true
       this.setData({
         logged: true
       })
@@ -430,28 +465,30 @@ Page({
           opr: 'add',
           tableName: 'userInfo',
           datas: {
-            userOpenId: app.globalData.userOpenId,
+            userOpenId: this.data.userOpenId,
             userName: '',
             userTel: '',
-            userNickName: app.globalData.nickName,
-            userAvatarUrl: app.globalData.avatarUrl
+            userNickName: e.detail.userInfo.nickName,
+            userAvatarUrl: e.detail.userInfo.avatarUrl
           }
-        },
-        success: res => {
-          this.setData({
-            userDoc: res.result._id
-          })
-          app.globalData.userDoc = res.result._id
         }
       })
     }
   },
 
   onLoad(options) {
-    this.initValidate()
     this.getOpenId()
     this.getUserInfo()
-    WxSearch.init(this, 10, ['梁晓敏', '广东海洋大学', '电子与信息工程学院', '电气工程及其自动化']);
-    WxSearch.initMindKeys(['梁晓敏', '广东海洋大学', '电子与信息工程学院', '电气工程及其自动化']);
+    this.initValidate()
+    WxSearch.init(this, 10, ['梁晓敏', '广东海洋大学', '电子与信息工程学院', '电气工程及其自动化'])
+    WxSearch.initMindKeys(['梁晓敏', '广东海洋大学', '电子与信息工程学院', '电气工程及其自动化'])
+  },
+
+  onready() {
+
+  },
+
+  onshow() {
+
   }
 })

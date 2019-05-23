@@ -35,10 +35,11 @@ exports.main = async(event, context) => {
       }
     }
   } else if (event.opr == 'update') {
-    if (event.command == 'inc') {
+    if (event.command) {
+      let update=event.update
       try {
         return await db.collection(event.tableName).where(event.where).update({
-          data: event.update
+          data: {update:_.inc(1)}
         })
       } catch (e) {
         console.error(e)
@@ -46,7 +47,7 @@ exports.main = async(event, context) => {
     } else {
       try {
         return await db.collection(event.tableName).where(event.where).update({
-          data: event.datas
+          data: event.update
         })
       } catch (e) {
         console.error(e)
