@@ -82,8 +82,10 @@
     </view>
     <view class="uploader">
       <view class="cu-btn bg-yellow shadow" bindtap="uploadImg">上传图片</view>
-      <view class="uploader-container" wx:if="{{imgFileId}}">
-        <image class="xl solids uploader-image" src="{{imgFileId}}" mode=''></image>
+      <view wx:if="{{imgFileIds}}">
+        <block wx:for="{{imgFileIds}}">
+          <image class="xl solids uploader-image " src="{{item}}"></image>
+        </block>
       </view>
     </view>
     <view>
@@ -93,13 +95,13 @@
 </view>
 
 <!-- 搜索动态 -->
-<view class="margin-xl padding-xl bg-white radius shadow-lg">
-  <view class="weui-search-bar">
-    <view class="weui-search-bar__form">
-      <view class="weui-search-bar__box">
-        <icon class="weui-icon-search_in-box" type="search" size="14"></icon>
-        <input class="weui-search-bar__input" placeholder="搜索动态" value="{{wxSearchData.value}}" bindfocus="wxSearchFocus" bindinput="wxSearchInput" bindblur="wxSearchBlur" bindconfirm='searchMoment' />
-        <view class="weui-icon-clear" wx:if="{{wxSearchData.value.length > 0}}" bindtap="wxSearchclearInput">
+<view class="margin-xl padding-xl bg-white radius shadow-lg ">
+  <view class="weui-search-bar ">
+    <view class="weui-search-bar__form ">
+      <view class="weui-search-bar__box ">
+        <icon class="weui-icon-search_in-box " type="search " size="14 "></icon>
+        <input class="weui-search-bar__input " placeholder="搜索动态 " value="{{wxSearchData.value}} " bindfocus="wxSearchFocus " bindinput="wxSearchInput " bindblur="wxSearchBlur " bindconfirm='searchMoment' />
+        <view class="weui-icon-clear " wx:if="{{wxSearchData.value.length> 0}}" bindtap="wxSearchclearInput">
           <icon class='padding-bottom-sm' type="clear" size="14"></icon>
         </view>
       </view>
