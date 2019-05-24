@@ -82,8 +82,8 @@
     </view>
     <view class="uploader">
       <view class="cu-btn bg-yellow shadow" bindtap="uploadImg">上传图片</view>
-      <view wx:if="{{imgFileIds}}">
-        <block wx:for="{{imgFileIds}}">
+      <view wx:if="{{filePaths}}">
+        <block wx:for="{{filePaths}}">
           <image class="xl solids uploader-image " src="{{item}}"></image>
         </block>
       </view>

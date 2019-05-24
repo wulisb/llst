@@ -7,7 +7,6 @@ const _ = db.command
 
 Page({
   data: {
-    imgFileIds: [],
     avatarUrl: '../../images/user-unlogin.png',
     logged: false,
     //判断小程序的API，回调，参数，组件等是否在当前版本可用
@@ -35,41 +34,17 @@ Page({
         wx.showLoading({
           title: '上传中',
         })
-        const filePaths = res.tempFilePaths //临时路径
-        const cloudPaths = []
-        const fileIDs = []
-        filePaths.forEach((item, index) => {
-          cloudPaths.push(this.data.userOpenId + '_' + 'momentImg' +
-                          index + filePaths[index].match(/\.[^.]+?$/)[0]) //云存储图片名字
-          let _cloudPath = cloudPaths[index].toString()
-          let _filePath = item.toString()
-          wx.cloud.uploadFile({
-            cloudPath: _cloudPath,
-            filePath: _filePath,
-            success: res => {
-              fileIDs.push(res.fileID)
-              this.setData({
-                imgFileIds: fileIDs
-              })
-              console.log(imgFileIds)
-              wx.showToast({
-                title: '上传成功'
-              })
-            },
-            fail: err => {
-              console.log(err)
-              wx.showToast({
-                icon: 'none',
-                title: '上传失败'
-              })
-            }
-          })
+        this.setData({
+          filePaths : res.tempFilePaths //临时路径
+        })
+        wx.showToast({
+          title: '上传成功'
         })
       },
       fail: () => {
         wx.showToast({
           icon: 'none',
-          title: '请重新选择'
+          title: '上传失败，请重新选择'
         })
       },
       complete: () => {
@@ -90,7 +65,7 @@ Page({
       })
       return false
     }
-    //验证通过，更新数据库
+    //验证通过，插入数据库
     wx.cloud.callFunction({
       name: 'dbOpr',
       data: {
@@ -101,12 +76,43 @@ Page({
           momentTxt: e.detail.value.momentTxt,
           authorId: this.data.userOpenId,
           source: 'user',
-          momentImg: this.data.imgFileIds,
+          momentImg: [],
           likeNum: 0,
           createTime: db.serverDate()
         }
       },
-      success: () => {
+      success: res => {
+        console.log(res.result._id)
+        let momentId = res.result._id
+        const cloudPaths = [], fileIDs = []
+        this.data.filePaths.forEach((item, index) => {
+          cloudPaths.push(momentId+ '_' + 'momentImg' +
+            index + this.data.filePaths[index].match(/\.[^.]+?$/)[0]) //云存储图片名字
+          let _cloudPath = cloudPaths[index].toString()
+          let _filePath = item.toString()
+          // 发表之后上传云图
+          wx.cloud.uploadFile({
+            cloudPath: _cloudPath,
+            filePath: _filePath,
+            success: res => {
+              fileIDs.push(res.fileID)
+              // 上传之后更新数据库
+              wx.cloud.callFunction({
+                name: 'dbOpr',
+                data: {
+                  opr: 'update',
+                  tableName: 'moment',
+                  where: {
+                    _id: momentId
+                  },
+                  update: {
+                    momentImg: fileIDs[index]
+                  }
+                }
+              })
+            }
+          })
+        })
         wx.showToast({
           title: '发表成功'
         })
